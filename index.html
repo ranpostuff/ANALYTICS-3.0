@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RescuePriority - Emergency Operations Center (MCNHS)</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="analytics.css">
+
+    <!-- Chart.js — self-hosted locally (not loaded from a CDN) so the
+         Analytics charts work even on networks that block CDN domains.
+         Make sure chart.umd.min.js sits in this same ANALYTICS folder. -->
+    <script src="chart.umd.min.js"></script>
+</head>
+<body class="eoc-dashboard-body">
+
+    <div class="app-shell">
+
+        <!-- ============================= SIDEBAR ============================= -->
+        <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-mark">RP</div>
+                <div class="sidebar-brand-text">
+                    <h1>RESCUEPRIORITY</h1>
+                    <p>MCNHS Emergency Ops Center</p>
+                </div>
+                <button type="button" class="sidebar-close" id="sidebar-close" aria-label="Close menu">&times;</button>
+            </div>
+
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <p class="nav-section-label">Main</p>
+                <button type="button" class="sidebar-nav-item active" data-view="command-center-view">
+                    <span class="nav-icon">&#9673;</span> Command Center
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="dashboard-view">
+                    <span class="nav-icon">&#9635;</span> Dashboard
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="campus-map-view">
+                    <span class="nav-icon">&#9638;</span> Campus Map
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="incident-log-view">
+                    <span class="nav-icon">&#9888;</span> Incident Log
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="analytics-view">
+                    <span class="nav-icon">&#9682;</span> Analytics
+                </button>
+
+                <p class="nav-section-label">System</p>
+                <button type="button" class="sidebar-nav-item" data-view="system-status-view">
+                    <span class="nav-icon">&#9881;</span> System Status
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="settings-view">
+                    <span class="nav-icon">&#9881;</span> Settings
+                </button>
+                <button type="button" class="sidebar-nav-item" data-view="help-view">
+                    <span class="nav-icon">?</span> Help
+                </button>
+            </nav>
+
+            <div class="sidebar-foot">MCNHS &middot; ESP32-linked</div>
+        </aside>
+
+        <!-- ============================= MAIN CONTENT ============================= -->
+        <div class="main-content">
+
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+                    <div class="topbar-greeting">
+                        <h2 id="greeting-text">Good day, Admin</h2>
+                        <p id="live-date">Loading date...</p>
+                    </div>
+                </div>
+
+                <div class="header-clock">
+                    <span class="time-text" id="live-time">00:00:00 AM</span>
+                    <span class="date-text">Asia/Manila</span>
+                </div>
+            </header>
+
+            <div class="dashboard-wrapper">
+
+                <!-- ============================= COMMAND CENTER VIEW ============================= -->
+                <div id="command-center-view" class="app-view">
+
+                    <section class="metrics-overview">
+                        <div class="metric-card card-primary">
+                            <span class="metric-label">Total Facilities</span>
+                            <span class="metric-value" id="stat-total">0</span>
+                        </div>
+                        <div class="metric-card card-safe">
+                            <span class="metric-label">Safe Areas</span>
+                            <span class="metric-value" id="stat-safe">0</span>
+                        </div>
+                        <div class="metric-card card-alert">
+                            <span class="metric-label">Active Emergencies</span>
+                            <span class="metric-value" id="stat-alerts">0</span>
+                        </div>
+                        <div class="metric-card card-incidents">
+                            <span class="metric-label">Total Incidents</span>
+                            <span class="metric-value" id="stat-incidents">0</span>
+                        </div>
+                    </section>
+
+                    <div class="cc-card system-status-card" id="system-status-card">
+                        <div class="system-status-icon" id="system-status-icon">&#10003;</div>
+                        <div class="system-status-body">
+                            <h3 id="system-status-title">All Systems Normal</h3>
+                            <p id="system-status-detail">55 facilities monitored &middot; no active emergencies detected</p>
+                        </div>
+                    </div>
+
+                    <section class="cc-card campus-watch-card">
+                        <div class="cc-card-header">
+                            <div>
+                                <h3>Live Campus Update</h3>
+                                <p>Monitoring school facilities in real time</p>
+                            </div>
+                            <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+                        </div>
+
+                        <div class="campus-watch-carousel" id="campus-watch-carousel" tabindex="0" aria-label="Facility spotlight carousel, use left and right arrow keys to navigate">
+                            <button type="button" class="carousel-arrow" id="carousel-prev" aria-label="Previous facility">&#8249;</button>
+                            <div class="carousel-track-wrap" id="carousel-track-wrap">
+                                <!-- slides injected dynamically by script.js -->
+                            </div>
+                            <button type="button" class="carousel-arrow" id="carousel-next" aria-label="Next facility">&#8250;</button>
+                        </div>
+
+                        <div class="carousel-footer">
+                            <div class="carousel-progress-track">
+                                <div class="carousel-progress-fill" id="carousel-progress-fill"></div>
+                            </div>
+                            <span class="carousel-counter" id="carousel-counter">1 / 55</span>
+                        </div>
+                    </section>
+
+                    <div class="command-grid">
+                        <section class="cc-card">
+                            <div class="cc-card-header">
+                                <div>
+                                    <h3>Recent Incidents</h3>
+                                    <p>Latest emergency and facility events</p>
+                                </div>
+                            </div>
+                            <div class="cc-recent-list" id="command-recent-incidents">
+                                <div class="empty-incident-state">No recorded incidents yet.</div>
+                            </div>
+                        </section>
+
+                        <section class="cc-card">
+                            <div class="cc-card-header">
+                                <div>
+                                    <h3>Campus Status</h3>
+                                    <p>Current facility breakdown</p>
+                                </div>
+                            </div>
+                            <div class="campus-status-rows">
+                                <div>
+                                    <div class="campus-status-row-label"><span>Safe Areas</span><strong id="cc-safe-value">0</strong></div>
+                                    <div class="campus-progress-track"><div class="campus-progress-fill" id="cc-safe-bar" style="width:0%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="campus-status-row-label"><span>Active Emergencies</span><strong id="cc-active-value">0</strong></div>
+                                    <div class="campus-progress-track"><div class="campus-progress-fill fill-alert" id="cc-active-bar" style="width:0%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="campus-status-row-label"><span>Total Facilities</span><strong id="cc-total-value">55</strong></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="quick-actions-row">
+                        <button type="button" class="quick-action-btn" data-view="campus-map-view">
+                            <span class="quick-action-icon">&#9638;</span>
+                            <span class="quick-action-label">Open Campus Map</span>
+                        </button>
+                        <button type="button" class="quick-action-btn" data-view="incident-log-view">
+                            <span class="quick-action-icon">&#9888;</span>
+                            <span class="quick-action-label">View Incident Log</span>
+                        </button>
+                        <button type="button" class="quick-action-btn" data-view="analytics-view">
+                            <span class="quick-action-icon">&#9682;</span>
+                            <span class="quick-action-label">Open Analytics</span>
+                        </button>
+                        <button type="button" class="quick-action-btn" data-view="incident-log-view">
+                            <span class="quick-action-icon">&#9673;</span>
+                            <span class="quick-action-label">View Active Emergencies</span>
+                        </button>
+                    </section>
+                </div>
+
+                <!-- ============================= DASHBOARD VIEW ============================= -->
+                <div id="dashboard-view" class="app-view hidden">
+                    <div class="view-header">
+                        <h2>Dashboard</h2>
+                        <p>Incident trends across all MCNHS facilities</p>
+                    </div>
+
+                    <section class="home-charts-row">
+                        <div class="analytics-chart-card home-chart-card">
+                            <div class="analytics-chart-header">
+                                <h3>Incidents by Classroom</h3>
+                            </div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-home-classroom"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-home-classroom-empty">No incident data yet.</p>
+                        </div>
+
+                        <div class="analytics-chart-card home-chart-card">
+                            <div class="analytics-chart-header">
+                                <h3>Status Overview</h3>
+                            </div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-home-status"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-home-status-empty">No incident data yet.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ============================= CAMPUS MAP VIEW ============================= -->
+                <div id="campus-map-view" class="app-view hidden">
+                    <main class="school-map-section">
+                        <div class="section-header">
+                            <h2>Interactive Campus Blueprint Layout</h2>
+                            <div class="header-controls">
+                                <button type="button" id="btn-trigger-test" class="btn-test-alert">Trigger Test Alert</button>
+                            </div>
+                        </div>
+
+                        <!-- CAMPUS BLUEPRINT CONTAINER -->
+                        <div class="blueprint-container" id="campus-blueprint">
+
+                            <!-- TOP WING -->
+                            <div class="wing wing-top" id="wing-top"></div>
+
+                            <!-- MIDDLE SECTION -->
+                            <div class="blueprint-middle">
+                                <div class="wing wing-left" id="wing-left"></div>
+
+                                <div class="courtyard-area">
+                                    <!-- SHS BUILDING BLOCK 1 -->
+                                    <div class="shs-cluster" id="shs-block-1">
+                                        <div class="shs-tier-label">SHS BUILDING 1</div>
+                                        <div class="shs-tier" id="shs1-tier-1"></div>
+                                        <div class="shs-tier" id="shs1-tier-2"></div>
+                                    </div>
+
+                                    <!-- SHS BUILDING BLOCK 2 -->
+                                    <div class="shs-cluster" id="shs-block-2">
+                                        <div class="shs-tier-label">SHS BUILDING 2</div>
+                                        <div class="shs-tier" id="shs2-tier-1"></div>
+                                        <div class="shs-tier" id="shs2-tier-2"></div>
+                                    </div>
+                                </div>
+
+                                <div class="wing wing-right" id="wing-right"></div>
+                            </div>
+
+                            <!-- BOTTOM WING / BLOCK -->
+                            <div class="wing wing-bottom" id="wing-bottom"></div>
+                        </div>
+                    </main>
+                </div>
+
+                <!-- ============================= INCIDENT LOG VIEW ============================= -->
+                <div id="incident-log-view" class="app-view hidden">
+
+                    <!-- INCIDENT LIST PANEL -->
+                    <section class="incident-log-section" id="incident-list-panel">
+
+                        <div class="section-header">
+                            <div>
+                                <h2>Incident Log</h2>
+                                <p class="section-subtitle">
+                                    Emergency and facility event history
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                id="btn-clear-all-incidents"
+                                class="btn-clear-incidents">
+                                Clear All Incident Logs
+                            </button>
+                        </div>
+
+                        <div id="incident-folder-list" class="incident-folder-list">
+                            <div class="empty-incident-state">
+                                No recorded incidents yet. System operating normally.
+                            </div>
+                        </div>
+
+                    </section>
+
+                    <!-- INCIDENT DETAIL / TIMELINE PANEL -->
+                    <section class="incident-detail-section hidden" id="incident-detail-panel">
+                        <button type="button" class="btn-back-to-list" id="btn-back-to-incidents">&larr; Back to Incident Log</button>
+
+                        <div class="incident-detail-head">
+                            <h2 id="incident-detail-title">Emergency #000</h2>
+                            <span id="incident-detail-status-badge" class="status-pill">Resolved</span>
+                        </div>
+
+                        <div class="incident-detail-meta">
+                            <div>
+                                <span class="meta-label">Classroom</span>
+                                <span class="meta-value" id="incident-detail-facility">--</span>
+                            </div>
+                            <div>
+                                <span class="meta-label">Triggered</span>
+                                <span class="meta-value" id="incident-detail-triggered">--</span>
+                            </div>
+                            <div>
+                                <span class="meta-label">Status</span>
+                                <span class="meta-value" id="incident-detail-status-text">--</span>
+                            </div>
+                            <div>
+                                <span class="meta-label">Resolved At</span>
+                                <span class="meta-value" id="incident-detail-resolved">--</span>
+                            </div>
+                        </div>
+
+                        <div class="incident-timeline-wrapper">
+                            <h3 class="timeline-heading">Timeline</h3>
+                            <ol class="incident-timeline" id="incident-timeline-list"></ol>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ============================= ANALYTICS VIEW ============================= -->
+                <div id="analytics-view" class="app-view hidden">
+
+                    <section class="analytics-intro">
+                        <div>
+                            <h2>Analytics</h2>
+                            <p class="section-subtitle">Monitor emergency activity across MCNHS</p>
+                        </div>
+                        <button type="button" id="btn-analytics-refresh" class="btn-test-alert">&#8635; Refresh</button>
+                    </section>
+
+                    <!-- KPI CARDS -->
+                    <section class="analytics-kpi-row">
+                        <div class="analytics-kpi-card kpi-primary">
+                            <span class="analytics-kpi-label">Total Incidents</span>
+                            <span class="analytics-kpi-value" id="kpi-total-incidents">0</span>
+                        </div>
+                        <div class="analytics-kpi-card kpi-active">
+                            <span class="analytics-kpi-label">Active Incidents</span>
+                            <span class="analytics-kpi-value" id="kpi-active-incidents">0</span>
+                        </div>
+                        <div class="analytics-kpi-card kpi-resolved">
+                            <span class="analytics-kpi-label">Resolved Incidents</span>
+                            <span class="analytics-kpi-value" id="kpi-resolved-incidents">0</span>
+                        </div>
+                        <div class="analytics-kpi-card kpi-resolution">
+                            <span class="analytics-kpi-label">Avg. Resolution Time</span>
+                            <span class="analytics-kpi-value" id="kpi-avg-resolution">--</span>
+                        </div>
+                    </section>
+
+                    <!-- INCIDENT FREQUENCY (PRIMARY CHART) -->
+                    <section class="analytics-chart-card analytics-chart-card-wide">
+                        <div class="analytics-chart-header">
+                            <h3>Incident Frequency</h3>
+                            <select id="analytics-period-select" class="analytics-period-select">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="analytics-chart-canvas-wrap analytics-chart-canvas-wrap-wide">
+                            <canvas id="chart-frequency"></canvas>
+                        </div>
+                        <p class="analytics-empty-note hidden" id="chart-frequency-empty">No incident data yet.</p>
+                    </section>
+
+                    <!-- SECONDARY CHART GRID -->
+                    <section class="analytics-chart-grid">
+                        <div class="analytics-chart-card">
+                            <div class="analytics-chart-header"><h3>By Classroom</h3></div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-classroom"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-classroom-empty">No incident data yet.</p>
+                        </div>
+
+                        <div class="analytics-chart-card">
+                            <div class="analytics-chart-header"><h3>By Hour</h3></div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-hour"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-hour-empty">No incident data yet.</p>
+                        </div>
+
+                        <div class="analytics-chart-card">
+                            <div class="analytics-chart-header"><h3>By Weekday</h3></div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-weekday"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-weekday-empty">No incident data yet.</p>
+                        </div>
+
+                        <div class="analytics-chart-card">
+                            <div class="analytics-chart-header"><h3>Status</h3></div>
+                            <div class="analytics-chart-canvas-wrap">
+                                <canvas id="chart-status"></canvas>
+                            </div>
+                            <p class="analytics-empty-note hidden" id="chart-status-empty">No incident data yet.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ============================= SYSTEM STATUS VIEW ============================= -->
+                <div id="system-status-view" class="app-view hidden">
+                    <div class="view-header">
+                        <h2>System Status</h2>
+                        <p>Live monitoring state for every MCNHS facility</p>
+                    </div>
+
+                    <div class="cc-card system-status-card" id="system-status-card-full">
+                        <div class="system-status-icon" id="system-status-icon-full">&#10003;</div>
+                        <div class="system-status-body">
+                            <h3 id="system-status-title-full">All Systems Normal</h3>
+                            <p id="system-status-detail-full">55 facilities monitored &middot; no active emergencies detected</p>
+                        </div>
+                    </div>
+
+                    <section class="cc-card">
+                        <div class="cc-card-header">
+                            <div>
+                                <h3>Facilities Requiring Attention</h3>
+                                <p>Updates live from Firebase / ESP32</p>
+                            </div>
+                        </div>
+                        <div class="system-status-full-list" id="system-status-full-list">
+                            <div class="empty-incident-state">No active emergencies. All facilities are safe.</div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ============================= SETTINGS VIEW ============================= -->
+                <div id="settings-view" class="app-view hidden">
+                    <div class="view-header">
+                        <h2>Settings</h2>
+                        <p>Application information</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>About RescuePriority</h3>
+                        <p>RescuePriority is the MCNHS Emergency Operations Center dashboard. It monitors 55 campus facilities in real time via an ESP32-linked Firebase backend, logs every emergency as a permanent incident record, and surfaces analytics on response activity.</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Data Source</h3>
+                        <p>Facility status, incident records, and adviser assignments are read directly from Firebase Realtime Database (<code>classrooms/</code> and <code>incidents/</code>) — nothing on this page is hard-coded or simulated.</p>
+                    </div>
+                </div>
+
+                <!-- ============================= HELP VIEW ============================= -->
+                <div id="help-view" class="app-view hidden">
+                    <div class="view-header">
+                        <h2>Help</h2>
+                        <p>Quick guide to the Command Center</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Navigating RescuePriority</h3>
+                        <ul>
+                            <li><strong>Command Center</strong> — the landing screen. Answers "what is happening right now" with KPIs, system status, the Live Campus Update carousel, recent incidents, and quick actions.</li>
+                            <li><strong>Dashboard</strong> — incident trend charts (by classroom, by status).</li>
+                            <li><strong>Campus Map</strong> — the interactive blueprint of all 55 facilities. Click any room for full details and emergency controls.</li>
+                            <li><strong>Incident Log</strong> — permanent history of every emergency, with a timeline for each.</li>
+                            <li><strong>Analytics</strong> — deeper charts: frequency over time, by classroom, by hour, by weekday, and by status.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP MODAL -->
+    <div id="room-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" id="modal-close">&times;</button>
+
+            <div class="modal-header">
+                <h2 id="modal-room-title">Facility Details</h2>
+                <span id="modal-status-badge" class="modal-badge">Safe</span>
+            </div>
+
+            <!-- Live Feed Preview Box -->
+            <div id="modal-image-container" class="preview-box"></div>
+
+            <!-- Details List -->
+            <div class="modal-details-grid">
+                <p><strong>Wing/Zone:</strong> <span id="modal-zone">--</span></p>
+                <p><strong>Adviser/Officer:</strong> <span id="modal-adviser">--</span></p>
+                <p><strong>Section/Role:</strong> <span id="modal-section">--</span></p>
+                <p><strong>Priority Level:</strong> <span id="modal-priority">--</span></p>
+                <p><strong>Emergency Status:</strong> <span id="modal-type">--</span></p>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="modal-actions">
+                <button type="button" id="btn-acknowledge" class="btn btn-ack" disabled>Acknowledge Siren</button>
+                <button type="button" id="btn-resolve" class="btn btn-resolve" disabled>Clear Emergency</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESOLVE EMERGENCY — SELECTION MODAL -->
+    <div id="resolve-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" id="resolve-modal-close">&times;</button>
+
+            <div class="modal-header">
+                <h2>Resolve Emergency</h2>
+            </div>
+
+            <p class="resolve-modal-subtitle">Which emergency would you like to resolve?</p>
+
+            <div id="resolve-options-list" class="resolve-options-list"></div>
+
+            <div class="resolve-reason-field">
+                <label for="resolve-reason-input">What happened? (optional)</label>
+                <textarea id="resolve-reason-input" rows="3" placeholder="Describe what happened and how it was handled..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-resolve-cancel" class="btn btn-ack">Cancel</button>
+                <button type="button" id="btn-resolve-confirm" class="btn btn-resolve" disabled>Resolve Emergency</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+    <script type="module" src="insights.js"></script>
+</body>
+</html>

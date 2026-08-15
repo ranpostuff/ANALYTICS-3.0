@@ -1,0 +1,164 @@
+/* ============================================================================
+   RESCUEPRIORITY — ANALYTICS
+   Extends the existing pink/rose theme (variables come from style.css :root).
+   No selectors here collide with style.css — everything is analytics-* scoped.
+   ============================================================================ */
+
+.analytics-intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    padding: 0.85rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.analytics-intro h2 { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
+
+/* ============================================================================
+   KPI ROW
+   ============================================================================ */
+.analytics-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.analytics-kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 0.85rem 1.1rem;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.analytics-kpi-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.analytics-kpi-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text-primary);
+}
+
+.analytics-kpi-card.kpi-primary {
+    background: var(--accent-pink);
+    border-color: var(--accent-pink);
+}
+.analytics-kpi-card.kpi-primary .analytics-kpi-label { color: rgba(255, 255, 255, 0.85); }
+.analytics-kpi-card.kpi-primary .analytics-kpi-value { color: #ffffff; }
+
+.analytics-kpi-card.kpi-active .analytics-kpi-value { color: var(--status-emergency); }
+.analytics-kpi-card.kpi-resolved .analytics-kpi-value { color: var(--status-safe); }
+.analytics-kpi-card.kpi-resolution .analytics-kpi-value { color: var(--accent-pink-dark); font-size: 1.35rem; }
+
+/* ============================================================================
+   CHART CARDS
+   ============================================================================ */
+.analytics-chart-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.analytics-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.analytics-chart-header h3 {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.analytics-period-select {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-pink-dark);
+    background: var(--accent-pink-lightest);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    cursor: pointer;
+}
+
+.analytics-chart-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+}
+
+.analytics-chart-canvas-wrap-wide {
+    height: 280px;
+}
+
+.analytics-empty-note {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding: 0.75rem 0 0.25rem;
+}
+
+.analytics-chart-card-wide {
+    width: 100%;
+}
+
+.analytics-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+/* ============================================================================
+   HOME DASHBOARD CHART ROW
+   Reuses .analytics-chart-card / .analytics-chart-header / .analytics-chart-
+   canvas-wrap so the Home charts stay visually identical to Analytics.
+   ============================================================================ */
+.home-charts-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.home-chart-card .analytics-chart-canvas-wrap {
+    height: 200px;
+}
+
+/* ============================================================================
+   RESPONSIVENESS
+   ============================================================================ */
+@media (max-width: 900px) {
+    .analytics-kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .analytics-chart-grid { grid-template-columns: 1fr; }
+    .home-charts-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .analytics-intro { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .analytics-kpi-row { grid-template-columns: 1fr 1fr; }
+    .analytics-chart-canvas-wrap { height: 200px; }
+    .analytics-chart-canvas-wrap-wide { height: 240px; }
+}
